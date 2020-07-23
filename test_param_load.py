@@ -1,14 +1,14 @@
-from parameters import *
+import parameters
 
 # load
-parametersDict = load('parameters.json');
-print(parametersDict);
+parametersDict = parameters.load_param_file('parameters.json');
+#print(parametersDict);
 
 # initialize vars
-initialize_vars(parametersDict);
+parameters.initialize_param_vars(parametersDict);
 
 # print to see values
-print(position);
-print(orientation);
-print(coef_surface);
-print(coef_band);
+print('position at test =', parameters.position);
+print(parameters.orientation);
+print(parameters.coef_surface.a);
+print(parameters.coef_band.difuse);

@@ -3,7 +3,7 @@ import json
 class coefficients():
 	pass
 
-position = None;
+position = 1;
 orientation = None;
 focal_distance = None;
 screen_width = None;
@@ -32,7 +32,7 @@ coef_band.ambient = None;
 coef_band.n = None;
 
 # load file and return json dictionary
-def load(file_path):
+def load_param_file(file_path):
 	parameters = None;
 
 	# with json file open readonly
@@ -49,8 +49,9 @@ def load(file_path):
 	return parameters;
 
 # attribute values to global variables from given parameter dictionary
-def initialize_vars(parameters):
+def initialize_param_vars(parameters):
 	position = parameters['position'];
+	print('position at pr = ', position)
 	orientation = parameters['orientation'];
 	focal_distance = parameters['focal_distance'];
 	screen_width = parameters['screen_width'];
