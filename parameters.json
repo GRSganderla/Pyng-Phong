@@ -1,0 +1,28 @@
+{
+    "position": [0, 0, 0],
+    "orientation": [30, 30, 30],
+    "focal_distance": 1,
+    "screen_width": 600,
+    "screen_height": 400,
+    "pixel_size_x": 1,
+    "pixel_size_y": 1,
+    "coef_surface": {
+        "a": 1,
+        "b": 1,
+        "c": 1,
+        "d": 1,
+        "e": 1,
+        "f": 1,
+        "g": 1,
+        "h": 1,
+        "j": 1,
+        "k": 1
+    },
+    "light": [40, 40, 40],
+    "coef_band": {
+        "difuse": 0.2,
+        "specular": 0.5,
+        "ambient": 0.6,
+        "n": 2
+    }
+}
