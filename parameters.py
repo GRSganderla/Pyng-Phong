@@ -50,14 +50,18 @@ def load_param_file(file_path):
 
 # attribute values to global variables from given parameter dictionary
 def initialize_param_vars(parameters):
+	global position, orientation, focal_distance, screen_width;
+	global screen_height, pixel_size_x, pixel_size_y;
+
 	position = parameters['position'];
-	print('position at pr = ', position)
 	orientation = parameters['orientation'];
 	focal_distance = parameters['focal_distance'];
 	screen_width = parameters['screen_width'];
 	screen_height = parameters['screen_height'];
 	pixel_size_x = parameters['pixel_size_x'];
 	pixel_size_y = parameters['pixel_size_y'];
+
+	global coef_surface;
 
 	coef_surface.a = parameters['coef_surface']['a'];
 	coef_surface.b = parameters['coef_surface']['b'];
@@ -70,7 +74,11 @@ def initialize_param_vars(parameters):
 	coef_surface.j = parameters['coef_surface']['j'];
 	coef_surface.k = parameters['coef_surface']['k'];
 
+	global light;
+
 	light = parameters['light'];
+
+	global coef_band;
 
 	coef_band.difuse = parameters['coef_band']['difuse'];
 	coef_band.specular = parameters['coef_band']['specular'];
