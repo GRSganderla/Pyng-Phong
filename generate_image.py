@@ -59,9 +59,11 @@ def calculate_projection_matrix(image_space_coords):
 		part_A = 0;
 		part_B = 0;
 
-		z_result = calculate_z_from_params(xpc, ypc, zpc);
+		z_result = calculate_z_from_params(xpc, ypc, zpc, part_A, part_B);
 		projection_matrix[i, j].z1 = z_result[0];
 		projection_matrix[i, j].z2 = z_result[1];
+
+		x_result = calculate_x_from_params(xpc, ypc, zpc);
 
 def calculate_z_from_params(xpc, ypc, zpc, part_A, part_B):
 
