@@ -38,7 +38,7 @@ def calculate_image_space_coord(image_matrix):
 		i = idxs[0]; j = idxs[1];
 		# calculate x and y
 		image_space_coords[i, j].x = (1.0/pr.pixel_size_x)*(i - (pr.screen_width/2.0));
-		image_space_coords[i, j].y = (1.0/pr.pixel_size_y)*(i - (pr.screen_height/2.0));
+		image_space_coords[i, j].y = (1.0/pr.pixel_size_y)*(j - (pr.screen_height/2.0));
 
 		#print(image_space_coords[i, j]);
 
