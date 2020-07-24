@@ -1,12 +1,12 @@
 {
-    "position": [0, 0, -1],
-    "orientation": [30, 30, 30],
-    "focal_distance": 1,
+    "position": [0.0, 0.0, -1.0],
+    "orientation": [0.0, 0.0, 1.0],
+    "focal_distance": 1.0,
     "screen_width": 600,
     "screen_height": 400,
     "pixel_size_x": 1,
     "pixel_size_y": 1,
-    "coef_surface": {
+    "cfs": {
         "a": 1,
         "b": 1,
         "c": 1,
@@ -19,7 +19,7 @@
         "k": -1
     },
     "light": [1, 1, -1],
-    "coef_band": {
+    "cfb": {
         "difuse": 0.5,
         "specular": 0.5,
         "ambient": 0.2,

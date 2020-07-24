@@ -11,28 +11,28 @@ screen_height = None;
 pixel_size_x = None;
 pixel_size_y = None;
 
-coef_surface = coefficients();
-coef_surface.a = None;
-coef_surface.b = None;
-coef_surface.c = None;
-coef_surface.d = None;
-coef_surface.e = None;
-coef_surface.f = None;
-coef_surface.g = None;
-coef_surface.h = None;
-coef_surface.j = None;
-coef_surface.k = None;
+cfs = coefficients();
+cfs.a = None;
+cfs.b = None;
+cfs.c = None;
+cfs.d = None;
+cfs.e = None;
+cfs.f = None;
+cfs.g = None;
+cfs.h = None;
+cfs.j = None;
+cfs.k = None;
 
 light = None;
 
-coef_band = coefficients();
-coef_band.difuse = None;
-coef_band.specular = None;
-coef_band.ambient = None;
-coef_band.n = None;
+cfb = coefficients();
+cfb.difuse = None;
+cfb.specular = None;
+cfb.ambient = None;
+cfb.n = None;
 
 # load file and return json dictionary
-def load_param_file(file_path):
+def load_file(file_path):
 	parameters = None;
 
 	# with json file open readonly
@@ -49,7 +49,7 @@ def load_param_file(file_path):
 	return parameters;
 
 # attribute values to global variables from given parameter dictionary
-def initialize_param_vars(parameters):
+def initialize_vars(parameters):
 	global position, orientation, focal_distance, screen_width;
 	global screen_height, pixel_size_x, pixel_size_y;
 
@@ -61,26 +61,26 @@ def initialize_param_vars(parameters):
 	pixel_size_x = parameters['pixel_size_x'];
 	pixel_size_y = parameters['pixel_size_y'];
 
-	global coef_surface;
+	global cfs;
 
-	coef_surface.a = parameters['coef_surface']['a'];
-	coef_surface.b = parameters['coef_surface']['b'];
-	coef_surface.c = parameters['coef_surface']['c'];
-	coef_surface.d = parameters['coef_surface']['d'];
-	coef_surface.e = parameters['coef_surface']['e'];
-	coef_surface.f = parameters['coef_surface']['f'];
-	coef_surface.g = parameters['coef_surface']['g'];
-	coef_surface.h = parameters['coef_surface']['h'];
-	coef_surface.j = parameters['coef_surface']['j'];
-	coef_surface.k = parameters['coef_surface']['k'];
+	cfs.a = parameters['cfs']['a'];
+	cfs.b = parameters['cfs']['b'];
+	cfs.c = parameters['cfs']['c'];
+	cfs.d = parameters['cfs']['d'];
+	cfs.e = parameters['cfs']['e'];
+	cfs.f = parameters['cfs']['f'];
+	cfs.g = parameters['cfs']['g'];
+	cfs.h = parameters['cfs']['h'];
+	cfs.j = parameters['cfs']['j'];
+	cfs.k = parameters['cfs']['k'];
 
 	global light;
 
 	light = parameters['light'];
 
-	global coef_band;
+	global cfb;
 
-	coef_band.difuse = parameters['coef_band']['difuse'];
-	coef_band.specular = parameters['coef_band']['specular'];
-	coef_band.ambient = parameters['coef_band']['ambient'];
-	coef_band.n = parameters['coef_band']['n'];
+	cfb.difuse = parameters['cfb']['difuse'];
+	cfb.specular = parameters['cfb']['specular'];
+	cfb.ambient = parameters['cfb']['ambient'];
+	cfb.n = parameters['cfb']['n'];

@@ -1,11 +1,11 @@
 import parameters as pr
 
 # load
-parametersDict = pr.load_param_file('parameters.json');
+parametersDict = pr.load_file('parameters.json');
 #print(parametersDict);
 
 # initialize vars
-pr.initialize_param_vars(parametersDict);
+pr.initialize_vars(parametersDict);
 
 # print to see values
 print('position at test =', pr.position);
