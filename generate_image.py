@@ -141,21 +141,21 @@ def calculate_z_from_params(xpc, ypc, zpc, part_A, part_B):
 		* sqrt_part) / (2 * pr.cfs.f * part_A + pr.cfs.b * part_B**2 + pr.cfs.c + 2
 		* pr.cfs.e * part_B + 2 * pr.cfs.d * part_A * part_B + pr.cfs.a * part_A**2);
 
-	print((z1, z2));
+	#print((z1, z2));
 	return (z1, z2);
 
 def calculate_x_from_params(xpc, zpc, part_A, z_coord):
 	x1 = xpc + (z_coord[0] - zpc) * part_A;
 	x2 = xpc + (z_coord[1] - zpc) * part_A;
 
-	print((x1, x2));
+	#print((x1, x2));
 	return (x1, x2);
 
-def calculate_y_from_params( ypc, zpc, part_B, z_coord):
+def calculate_y_from_params(ypc, zpc, part_B, z_coord):
 	y1 = ypc + (z_coord[0] - zpc) * part_B;
 	y2 = ypc + (z_coord[1] - zpc) * part_B;
 
-	print((y1, y2));
+	#print((y1, y2));
 	return (y1, y2);
 
 class point2D:
@@ -186,7 +186,7 @@ class projection_point:
 
 	def __str__(self):
 		return '(' + str(self.x1) + ', ' + str(self.y1) + ', ' + str(self.z1) + ')/'
-		+ '(' + str(self.x2) + ', ' + str(self.y2) + ', ' + str(self.z) + ')2';
+		+ '(' + str(self.x2) + ', ' + str(self.y2) + ', ' + str(self.z2) + ')2';
 
 if __name__ == '__main__':
 	generate_image('parameters.json');
