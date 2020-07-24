@@ -56,14 +56,24 @@ def calculate_projection_matrix(image_space_coords):
 		# get indexes
 		i = idxs[0]; j = idxs[1];
 
+		# eventualy calculate A and B
 		part_A = 0;
 		part_B = 0;
 
+		# calculate z values
 		z_result = calculate_z_from_params(xpc, ypc, zpc, part_A, part_B);
 		projection_matrix[i, j].z1 = z_result[0];
 		projection_matrix[i, j].z2 = z_result[1];
 
-		x_result = calculate_x_from_params(xpc, ypc, zpc);
+		# calculate x value
+		x_result = calculate_x_from_params(xpc, zpc, part_A, z_result);
+		projection_matrix[i, j].x1 = x_result[0];
+		projection_matrix[i, j].x2 = x_result[1];
+
+		# calculate y value
+		y_result = calculate_y_from_params(ypc, zpc, part_B, z_result);
+		projection_matrix[i, j].y1 = y_result[0];
+		projection_matrix[i, j].y2 = y_result[1];
 
 def calculate_z_from_params(xpc, ypc, zpc, part_A, part_B):
 
@@ -133,6 +143,20 @@ def calculate_z_from_params(xpc, ypc, zpc, part_A, part_B):
 
 	print((z1, z2));
 	return (z1, z2);
+
+def calculate_x_from_params(xpc, zpc, part_A, z_coord):
+	x1 = xpc + (z_coord[0] - zpc) * part_A;
+	x2 = xpc + (z_coord[1] - zpc) * part_A;
+
+	print((x1, x2));
+	return (x1, x2);
+
+def calculate_y_from_params( ypc, zpc, part_B, z_coord):
+	y1 = ypc + (z_coord[0] - zpc) * part_B;
+	y2 = ypc + (z_coord[1] - zpc) * part_B;
+
+	print((y1, y2));
+	return (y1, y2);
 
 class point2D:
 	def __init__(self):
