@@ -20,8 +20,8 @@
     },
     "light": [1, 1, -1],
     "cfb": {
-        "difuse": 0.5,
-        "specular": 0.5,
+        "difuse": 1,
+        "specular": 1,
         "ambient": 0.2,
         "n": 2
     }

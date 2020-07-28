@@ -1,10 +1,13 @@
 import parameters as pr
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 image_matrix = None;
 image_space_coords = None;
 projection_matrix = None;
+raw_image = None;
+result_image = None;
 
 def generate_image(paramFile):
 	# load
@@ -12,23 +15,41 @@ def generate_image(paramFile):
 	#print(parametersDict);
 
 	# initialize vars
+	print('Initialize Vars');
 	pr.initialize_vars(parametersDict);
 
 	global image_matrix;
-	image_matrix = np.zeros([pr.screen_width, pr.screen_height]);
+	print('Image matrix');
+	image_matrix = np.zeros([pr.screen_height, pr.screen_width]);
 	#print(image_matrix);
 
 	global image_space_coords;
+	print('Image space coords')
 	image_space_coords = calculate_image_space_coord(image_matrix);
 	#print(image_space_coords);
+	#print_matrix(image_space_coords);
 
 	global projection_matrix;
+	print('Projection matrix')
 	projection_matrix = calculate_projection_matrix(image_space_coords);
 	#print(projection_matrix);
+	#print_matrix(projection_matrix);
 
-	global image_result
-	image_result = np.full_like(projection_matrix, point3D(), dtype=point3D)
-	calculate_pixel_color(projection_matrix, image_result, pr.cfs)
+	global raw_image
+	print('Raw image');
+	raw_image = calculate_pixel_color(projection_matrix, raw_image, pr.cfs);
+
+	print('Result image');
+	global result_image
+	result_image = calculate_image_intensity(raw_image, result_image);
+	print_matrix(result_image);
+
+	#print(result_image);
+
+	plt.imshow(result_image, cmap='Greys', vmin=0, ); # anatomia
+	plt.show();
+
+
 	
 
 def calculate_vet_normal(coef, image):
@@ -81,19 +102,24 @@ def calculate_norm(vect):
 
 def calculate_cos(vect_1, vect_2):
 
-	up_num = vect_1 * vect_2
-	dw_num = calculate_norm(vect_n) * calculate_norm(vect_l)
+	dw_num = calculate_norm(vect_1) * calculate_norm(vect_2)
 
-	return (up_num/dw_num)
+	return 1 if dw_num == 0 else (vect_1.dot(vect_2) / dw_num)
+	
 
 def calculate_pixel_color(projection, image, coef):
+	image = np.full_like(projection_matrix, None, dtype=point3D)
+
+	print(projection_matrix.shape)
 
 	xpc = pr.position[0]; ypc = pr.position[1]; zpc = pr.position[2];
 
-	for idxs, _ in np.ndenumerate(projection_matrix):
+	for idxs, _ in np.ndenumerate(image):
 		# get indexes
 		i = idxs[0]
 		j = idxs[1]
+
+		image[i, j] = point3D();
 
 		dist1, dist2 = calculate_dist_pc(xpc, ypc, zpc, projection[i, j])
 
@@ -108,23 +134,27 @@ def calculate_pixel_color(projection, image, coef):
 
 		vet_normal, vet_light_dir, vet_observ_dir, vet_reflex_dir = calculate_vectors(coef, image[i, j])
 
-		cos_theta = calculate_cos(vet_normal, vet_light_dir)
-		cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
-			
+		image[i, j].cos_theta = calculate_cos(vet_normal, vet_light_dir)
+		image[i, j].cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
+
+	return image;
+
 
 
 def calculate_image_space_coord(image_matrix):
 	# generate an array same size as image matrix
 	global image_space_coords;
-	image_space_coords = np.full_like(image_matrix, point2D(), dtype=point2D);
+	image_space_coords = np.full_like(image_matrix, None, dtype=point2D);
 
 	# loop through all elements and calculate it's space value
 	for idxs, _ in np.ndenumerate(image_space_coords):
+		#print(idxs);
 		# get indexes
 		i = idxs[0]; j = idxs[1];
 		# calculate x and y
-		image_space_coords[i, j].x = (1.0/pr.pixel_size_x)*(i - (pr.screen_width/2.0));
-		image_space_coords[i, j].y = (1.0/pr.pixel_size_y)*(j - (pr.screen_height/2.0));
+		image_space_coords[i, j] = point2D();
+		image_space_coords[i, j].x = (1.0/pr.pixel_size_x)*(i - (pr.screen_height/2.0));
+		image_space_coords[i, j].y = (1.0/pr.pixel_size_y)*(j - (pr.screen_width/2.0));
 
 		#print(image_space_coords[i, j]);
 
@@ -133,7 +163,7 @@ def calculate_image_space_coord(image_matrix):
 def calculate_projection_matrix(image_space_coords):
 	# generate matrix same size as space coords
 	global projection_matrix
-	projection_matrix = np.full_like(image_space_coords, projection_point(), dtype=projection_point);
+	projection_matrix = np.full_like(image_space_coords, None, dtype=projection_point);
 
 	xpc = pr.position[0]; ypc = pr.position[1]; zpc = pr.position[2];
 
@@ -141,6 +171,8 @@ def calculate_projection_matrix(image_space_coords):
 	for idxs, _ in np.ndenumerate(projection_matrix):
 		# get indexes
 		i = idxs[0]; j = idxs[1];
+
+		projection_matrix[i, j] = projection_point();
 
 		r_xyz = calculate_matrix_r(pr.orientation[0], pr.orientation[1], pr.orientation[2])
 
@@ -162,12 +194,14 @@ def calculate_projection_matrix(image_space_coords):
 		y_result = calculate_y_from_params(ypc, zpc, part_B, z_result);
 		projection_matrix[i, j].y1 = y_result[0];
 		projection_matrix[i, j].y2 = y_result[1];
+	
+	return projection_matrix;
 
 
 def calculate_dist_pc(xpc, ypc, zpc, new_coord):
 	
 	pit1 = ((xpc - new_coord.x1)**2) + ((ypc - new_coord.y1)**2) + ((zpc - new_coord.z1)**2)
-	pit1 = ((xpc - new_coord.x2)**2) + ((ypc - new_coord.y2)**2) + ((zpc - new_coord.z2)**2)
+	pit2 = ((xpc - new_coord.x2)**2) + ((ypc - new_coord.y2)**2) + ((zpc - new_coord.z2)**2)
 
 	return (math.sqrt(pit1), math.sqrt(pit2))
 
@@ -258,28 +292,48 @@ def calculate_y_from_params(ypc, zpc, part_B, z_coord):
 def calculate_matrix_r(omega, theta, kappa):
 
 	r11 = math.cos(theta) * math.cos(kappa)
-	r12 = math.sen(omega) * math.sen(theta) * math.cos(kappa) - math.cos(omega) * math.sen(kappa)
-	r13 = math.sen(omega) * math.sen(kappa) + math.cos(omega) * math.sen(theta) * math.cos(kappa)
-	r21 = math.cos(theta) * math.sen(kappa)
-	r22 = math.cos(omega) * math.cos(kappa) + math.sen(omega) * math.sen(theta) * math.sen(kappa)
-	r23 = math.cos(omega) * math.sen(theta) * math.sen(kappa) - math.sen(omega) * math.cos(kappa)
-	r31 = -math.sen(theta)
-	r32 = math.sen(omega) * math.cos(theta)
+	r12 = math.sin(omega) * math.sin(theta) * math.cos(kappa) - math.cos(omega) * math.sin(kappa)
+	r13 = math.sin(omega) * math.sin(kappa) + math.cos(omega) * math.sin(theta) * math.cos(kappa)
+	r21 = math.cos(theta) * math.sin(kappa)
+	r22 = math.cos(omega) * math.cos(kappa) + math.sin(omega) * math.sin(theta) * math.sin(kappa)
+	r23 = math.cos(omega) * math.sin(theta) * math.sin(kappa) - math.sin(omega) * math.cos(kappa)
+	r31 = -math.sin(theta)
+	r32 = math.sin(omega) * math.cos(theta)
 	r33 = math.cos(omega) * math.cos(theta)
 
 	return np.array([[r11, r12, r13], [r21, r22, r23], [r31, r32, r33]])
 
 def calculate_A(R, coord, f):
-	side_up = R[1, 1] * coord.x + R[2, 1] * coord.y + R[3, 1] * f
-	side_dw = R[1, 3] * coord.x + R[2, 3] * coord.y + R[3, 3] * f
+	side_up = R[0, 0] * coord.x + R[1, 0] * coord.y + R[2, 0] * f
+	side_dw = R[0, 2] * coord.x + R[1, 2] * coord.y + R[2, 2] * f
 
 	return (side_up / side_dw)
 
 def calculate_B(R, coord, f):
-	side_up = R[1, 2] * coord.x + R[2, 2] * coord.y + R[3, 2] * f
-	side_dw = R[1, 3] * coord.x + R[2, 3] * coord.y + R[3, 3] * f
+	side_up = R[0, 1] * coord.x + R[1, 1] * coord.y + R[2, 1] * f
+	side_dw = R[0, 2] * coord.x + R[1, 2] * coord.y + R[2, 2] * f
 
 	return (side_up / side_dw)
+
+def calculate_image_intensity(raw_image, result_image):
+	result_image = np.zeros_like(raw_image, dtype=float);
+
+	for idxs, _ in np.ndenumerate(raw_image):
+		i = idxs[0]; j = idxs[1];
+
+		result_image[i, j] = calculate_pixel_intensity(raw_image[i, j]);
+	
+	return result_image;
+
+
+def calculate_pixel_intensity(raw_pixel):
+	return 1*pr.cfb.ambient + 1*(pr.cfb.difuse * raw_pixel.cos_theta + pr.cfb.specular * raw_pixel.cos_alpha**pr.cfb.n);
+
+def print_matrix(matrix):
+	for i in range(matrix.shape[0]):
+		for j in range(matrix.shape[1]):
+			print(matrix[i, j], end='');
+	print('\n');
 
 class point2D:
 	def __init__(self):
