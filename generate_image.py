@@ -41,40 +41,51 @@ def generate_image(paramFile):
 
 	print('Result image');
 	global result_image
-	result_image = calculate_image_intensity(raw_image, result_image);
-	print_matrix(result_image);
+	#result_image = calculate_image_intensity(raw_image, result_image);
+	#print_matrix(result_image);
 
 	#print(result_image);
 
-	plt.imshow(result_image, cmap='Greys', vmin=0, ); # anatomia
-	plt.show();
+	#plt.imshow(result_image, cmap='Greys'); # anatomia
+	#plt.show();
 
+	fig = plt.figure();
+	ax = fig.add_subplot(111, projection='3d');
+	points = np.array([point.as_array() for point in raw_image.flatten()]);
+	#print(points.shape);
+	ax.scatter(points[:, 0], points[:, 1], points[:, 2]);
+	ax.set_xlabel('X Label')
+	ax.set_ylabel('Y Label')
+	ax.set_zlabel('Z Label')
+	plt.show();
 
 	
 
-def calculate_vet_normal(coef, image):
+def calculate_vet_normal(coef, pixel_coord):
 
-	n1 = 2 * coef.a * image.x + 2 * coef.d * image.y + 2 * coef.f * image.z + 2 * coef.g
-	n2 = 2 * coef.b * image.y + 2 * coef.d * image.x + 2 * coef.e * image.z + 2 * coef.h
-	n3 = 2 * coef.c * image.z + 2 * coef.e * image.y + 2 * coef.f * image.x + 2 * coef.j
+	n1 = 2 * coef.a * pixel_coord.x + 2 * coef.d * pixel_coord.y + 2 * coef.f * pixel_coord.z + 2 * coef.g
+	n2 = 2 * coef.b * pixel_coord.y + 2 * coef.d * pixel_coord.x + 2 * coef.e * pixel_coord.z + 2 * coef.h
+	n3 = 2 * coef.c * pixel_coord.z + 2 * coef.e * pixel_coord.y + 2 * coef.f * pixel_coord.z + 2 * coef.j
 
 	return np.array([n1, n2, n3])
 
-def calculate_light_dir(image):
+def calculate_light_dir(pixel_coord):
 
-	l1 = pr.light[0] - image.x
-	l2 = pr.light[1] - image.y
-	l3 = pr.light[2] - image.z
+	l1 = pr.light[0] - pixel_coord.x
+	l2 = pr.light[1] - pixel_coord.y
+	l3 = pr.light[2] - pixel_coord.z
 
-	return np.array([l1, l2, l3])
+	#return np.array([l1, l2, l3])
+	return pr.light - pixel_coord.as_array();
 
-def calculate_obser_dir(image):
+def calculate_obser_dir(pixel_coord):
 
-	od1 = pr.position[0] - image.x
-	od2 = pr.position[1] - image.y
-	od3 = pr.position[2] - image.z
+	od1 = pr.position[0] - pixel_coord.x
+	od2 = pr.position[1] - pixel_coord.y
+	od3 = pr.position[2] - pixel_coord.z
 
-	return np.array([od1, od2, od3])
+	#return np.array([od1, od2, od3])
+	return pr.position - pixel_coord.as_array();
 
 def calculate_vectors(coef, image):
 
@@ -89,22 +100,19 @@ def calculate_vectors(coef, image):
 	return (vet_n, vet_lig, vet_orien, vet_reflex)
 
 def calculate_reflex_dir(N, L):
-	w = 2 * (N[0]*L[0] + N[1]*L[1] + N[2]*L[2])
+	w = 2 * (N.dot(L))
 	R = w * N - L
 
 	return R
 
 def calculate_norm(vect):
-
-	sum_xyz = vect[0] ** 2 + vect[1] ** 2 + vect[2] ** 2
-
-	return math.sqrt(sum_xyz)
+	return np.linalg.norm(vect);
 
 def calculate_cos(vect_1, vect_2):
 
 	dw_num = calculate_norm(vect_1) * calculate_norm(vect_2)
 
-	return 1 if dw_num == 0 else (vect_1.dot(vect_2) / dw_num)
+	return 255 if dw_num == 0 else (vect_1.dot(vect_2) / dw_num)
 	
 
 def calculate_pixel_color(projection, image, coef):
@@ -123,7 +131,7 @@ def calculate_pixel_color(projection, image, coef):
 
 		dist1, dist2 = calculate_dist_pc(xpc, ypc, zpc, projection[i, j])
 
-		if dist1 > dist2:
+		if dist2 < dist1:
 			image[i, j].x = projection[i, j].x2
 			image[i, j].y = projection[i, j].y2
 			image[i, j].z = projection[i, j].z2
@@ -136,6 +144,9 @@ def calculate_pixel_color(projection, image, coef):
 
 		image[i, j].cos_theta = calculate_cos(vet_normal, vet_light_dir)
 		image[i, j].cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
+
+		#print(image[i, j].cos_theta);
+		#print(vet_normal);
 
 	return image;
 
@@ -174,16 +185,22 @@ def calculate_projection_matrix(image_space_coords):
 
 		projection_matrix[i, j] = projection_point();
 
-		r_xyz = calculate_matrix_r(pr.orientation[0], pr.orientation[1], pr.orientation[2])
+		r_xyz = calculate_matrix_r(pr.orientation)
+
+		#print(r_xyz);
 
 		# calculate A and B values
 		part_A = calculate_A(r_xyz, image_space_coords[i, j], pr.focal_distance);
 		part_B = calculate_B(r_xyz, image_space_coords[i, j], pr.focal_distance);
 
+		#print(part_A);
+
 		# calculate z values
 		z_result = calculate_z_from_params(xpc, ypc, zpc, part_A, part_B);
 		projection_matrix[i, j].z1 = z_result[0];
 		projection_matrix[i, j].z2 = z_result[1];
+
+		#print(z_result[1]);
 
 		# calculate x value
 		x_result = calculate_x_from_params(xpc, zpc, part_A, z_result);
@@ -207,70 +224,13 @@ def calculate_dist_pc(xpc, ypc, zpc, new_coord):
 
 def calculate_z_from_params(xpc, ypc, zpc, part_A, part_B):
 
-	sqrt_part = math.sqrt(-2 * pr.cfs.c * pr.cfs.g * xpc + pr.cfs.d**2 * xpc**2 * part_B**2
-		+ 2 * pr.cfs.j * pr.cfs.h * part_B - 2 * pr.cfs.e * part_B * pr.cfs.k + pr.cfs.j**2
-		- pr.cfs.c * pr.cfs.k + pr.cfs.f**2 * part_A**2 * zpc**2 + pr.cfs.e**2 * part_B**2
-		* zpc**2 + pr.cfs.d**2 * part_A**2 * ypc**2 - 2 * pr.cfs.j * pr.cfs.e * ypc + 2
-		* pr.cfs.j * pr.cfs.g * part_A + 2 * pr.cfs.j * pr.cfs.f * xpc - 2 * pr.cfs.f * part_A
-		* pr.cfs.k - pr.cfs.b * part_B**2 * pr.cfs.k - 2 * pr.cfs.c * pr.cfs.h * ypc - pr.cfs.c
-		* pr.cfs.a * xpc**2 - pr.cfs.c * pr.cfs.b * ypc**2 - pr.cfs.a * part_A**2 * pr.cfs.k + 2
-		* pr.cfs.d * xpc * part_B**2 * pr.cfs.h - 2 * pr.cfs.d * xpc * part_B * pr.cfs.f * part_A
-		* zpc - 2 * pr.cfs.d * xpc * part_B * pr.cfs.e * ypc - 2 * pr.cfs.d * xpc * part_B
-		* pr.cfs.g * part_A + 2 * pr.cfs.d * xpc * part_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.d
-		* xpc**2 * part_B * pr.cfs.f - 2 * pr.cfs.d**2 * xpc * part_B * part_A * ypc + 2
-		* pr.cfs.b * ypc * part_B * pr.cfs.a * xpc * part_A + 2 * pr.cfs.b * ypc * part_B
-		* pr.cfs.f * part_A * zpc + 2 * pr.cfs.b * ypc * part_B * pr.cfs.g * part_A + 2
-		* pr.cfs.b * ypc * part_B * pr.cfs.f * xpc + pr.cfs.b * pr.cfs.h**2 * part_B**2
-		+ pr.cfs.e**2 * ypc**2 + pr.cfs.g**2 * part_A**2 + pr.cfs.f**2 * xpc**2 - 2
-		* pr.cfs.a * part_A**2 * zpc * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * part_A
-		* pr.cfs.h * part_B + 2 * pr.cfs.a * xpc * part_A * pr.cfs.e * ypc + 2 * pr.cfs.a
-		* xpc * part_A * pr.cfs.e * part_B * zpc + 2 * pr.cfs.h * part_B * pr.cfs.f
-		* part_A * zpc - 2 * pr.cfs.h * part_B * pr.cfs.e * ypc + 2 * pr.cfs.h * part_B
-		* pr.cfs.g * part_A + 2 * pr.cfs.h * part_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.h
-		* part_B * pr.cfs.f * xpc - 2 * pr.cfs.h * part_B * pr.cfs.d * part_A * ypc - 2
-		* pr.cfs.f * part_A * zpc * pr.cfs.e * ypc + 2 * pr.cfs.f * part_A**2 * zpc
-		* pr.cfs.g + 2 * pr.cfs.f * part_A * zpc**2 * pr.cfs.e * part_B - 2 * pr.cfs.f**2
-		* part_A * zpc * xpc + 2 * pr.cfs.f * part_A**2 * zpc * pr.cfs.d * ypc + 2
-		* pr.cfs.e * ypc * pr.cfs.g * part_A - 2 * pr.cfs.e**2 * ypc * part_B * zpc
-		+ 2 * pr.cfs.e * ypc * pr.cfs.f * xpc + 2 * pr.cfs.e * ypc**2 * pr.cfs.d
-		* part_A - 2 * pr.cfs.e * ypc * pr.cfs.d * part_A* part_B *zpc + 2 * pr.cfs.g
-		* part_A * pr.cfs.e * part_B * zpc - 2 * pr.cfs.g * part_A * pr.cfs.f * xpc
-		+ 2 * pr.cfs.g * part_A**2 * pr.cfs.d * ypc - 2 * pr.cfs.e * part_B * zpc
-		* pr.cfs.f * xpc - 2 * pr.cfs.b * part_B**2 * zpc * pr.cfs.f * xpc - 2 * pr.cfs.f
-		* xpc * pr.cfs.d * part_A * ypc + 2 * pr.cfs.d * xpc * part_B * pr.cfs.j + 2
-		* pr.cfs.b * ypc * part_B * pr.cfs.j - 2 * pr.cfs.j * pr.cfs.a * part_A**2
-		* zpc + 2 * pr.cfs.j * pr.cfs.a * xpc * part_A - 2 * pr.cfs.j * pr.cfs.f
-		* part_A * zpc - 2 * pr.cfs.j * pr.cfs.e * part_B * zpc - 2 * pr.cfs.j
-		* pr.cfs.b * part_B**2 * zpc + 2 * pr.cfs.j * pr.cfs.d * part_A * ypc - 4
-		* pr.cfs.j * pr.cfs.d * part_A * part_B * zpc - 4 * pr.cfs.f * part_A * pr.cfs.h
-		* ypc - 2 * pr.cfs.f * part_A * pr.cfs.b * ypc**2 - 2 * pr.cfs.b * part_B**2
-		* pr.cfs.g * xpc - pr.cfs.b * part_B**2 * pr.cfs.a * xpc**2 - 4 * pr.cfs.e
-		* part_B * pr.cfs.g * xpc - 2 * pr.cfs.e * part_B * pr.cfs.a * xpc**2 - 2
-		* pr.cfs.a * part_A**2 * pr.cfs.h * ypc - pr.cfs.a * part_A**2 * pr.cfs.b
-		* ypc**2 - 2 * pr.cfs.c * pr.cfs.d * xpc * ypc - pr.cfs.c * pr.cfs.b * part_B**2
-		* zpc**2 - pr.cfs.c * pr.cfs.a * part_A**2 * zpc**2 + 2 * pr.cfs.c * pr.cfs.a
-		* xpc * part_A * zpc + 2 * pr.cfs.c * pr.cfs.h * part_B* zpc - 2 * pr.cfs.c
-		* pr.cfs.d * part_A * zpc**2 * part_B + 2 * pr.cfs.c * pr.cfs.b * ypc * part_B
-		* zpc + 2 * pr.cfs.c * pr.cfs.d * xpc * part_B * zpc + 2 * pr.cfs.c * pr.cfs.g
-		* part_A * zpc + 2 * pr.cfs.c * pr.cfs.d * part_A * zpc * ypc - 2 * pr.cfs.d
-		* part_A * part_B * pr.cfs.k);
+	sqrt_part = math.sqrt(-2 * pr.cfs.c * pr.cfs.g * xpc + pr.cfs.d**2 * xpc**2 * part_B**2 + 2 * pr.cfs.j * pr.cfs.h * part_B - 2 * pr.cfs.e * part_B * pr.cfs.k + pr.cfs.j**2 - pr.cfs.c * pr.cfs.k + pr.cfs.f**2 * part_A**2 * zpc**2 + pr.cfs.e**2 * part_B**2 * zpc**2 + pr.cfs.d**2 * part_A**2 * ypc**2 + 2 * pr.cfs.j * pr.cfs.e * ypc + 2 * pr.cfs.j * pr.cfs.g * part_A + 2 * pr.cfs.j * pr.cfs.f * xpc - 2 * pr.cfs.f * part_A * pr.cfs.k - pr.cfs.b * part_B**2 * pr.cfs.k - 2 * pr.cfs.c * pr.cfs.h * ypc - pr.cfs.c * pr.cfs.a * xpc**2 - pr.cfs.c * pr.cfs.b * ypc**2 - pr.cfs.a * part_A**2 * pr.cfs.k + 2 * pr.cfs.d * xpc * part_B**2 * pr.cfs.h - 2 * pr.cfs.d * xpc * part_B * pr.cfs.f * part_A * zpc - 2 * pr.cfs.d * xpc * part_B * pr.cfs.e * ypc - 2 * pr.cfs.d * xpc * part_B * pr.cfs.g * part_A + 2 * pr.cfs.d * xpc * part_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.d * xpc**2 * part_B * pr.cfs.f - 2 * pr.cfs.d**2 * xpc * part_B * part_A * ypc + 2 * pr.cfs.b * ypc * part_B * pr.cfs.a * xpc * part_A + 2 * pr.cfs.b * ypc * part_B * pr.cfs.f * part_A * zpc + 2 * pr.cfs.b * ypc * part_B * pr.cfs.g * part_A + 2 * pr.cfs.b * ypc * part_B * pr.cfs.f * xpc + pr.cfs.h**2 * part_B**2 + pr.cfs.e**2 * ypc**2 + pr.cfs.g**2 * part_A**2 + pr.cfs.f**2 * xpc**2 - 2 * pr.cfs.a * part_A**2 * zpc * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * part_A * pr.cfs.h * part_B + 2 * pr.cfs.a * xpc * part_A * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * part_A * pr.cfs.e * part_B * zpc + 2 * pr.cfs.h * part_B * pr.cfs.f * part_A * zpc - 2 * pr.cfs.h * part_B * pr.cfs.e * ypc + 2 * pr.cfs.h * part_B * pr.cfs.g * part_A + 2 * pr.cfs.h * part_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.h * part_B * pr.cfs.f * xpc - 2 * pr.cfs.h * part_B * pr.cfs.d * part_A * ypc - 2 * pr.cfs.f * part_A * zpc * pr.cfs.e * ypc + 2 * pr.cfs.f * part_A**2 * zpc * pr.cfs.g + 2 * pr.cfs.f * part_A * zpc**2 * pr.cfs.e * part_B - 2 * pr.cfs.f**2 * part_A * zpc * xpc + 2 * pr.cfs.f * part_A**2 * zpc * pr.cfs.d * ypc + 2 * pr.cfs.e * ypc * pr.cfs.g * part_A - 2 * pr.cfs.e**2 * ypc * part_B * zpc + 2 * pr.cfs.e * ypc * pr.cfs.f * xpc + 2 * pr.cfs.e * ypc**2 * pr.cfs.d * part_A - 2 * pr.cfs.e * ypc * pr.cfs.d * part_A * part_B * zpc + 2 * pr.cfs.g * part_A * pr.cfs.e * part_B * zpc - 2 * pr.cfs.g * part_A * pr.cfs.f * xpc + 2 * pr.cfs.g * part_A**2 * pr.cfs.d * ypc - 2 * pr.cfs.e * part_B * zpc * pr.cfs.f * xpc - 2 * pr.cfs.b * part_B**2 * zpc * pr.cfs.f * xpc - 2 * pr.cfs.f * xpc * pr.cfs.d * part_A * ypc + 2 * pr.cfs.d * xpc * part_B * pr.cfs.j + 2 * pr.cfs.b * ypc * part_B * pr.cfs.j - 2 * pr.cfs.j * pr.cfs.a * part_A**2 * zpc + 2 * pr.cfs.j * pr.cfs.a * xpc * part_A - 2 * pr.cfs.j * pr.cfs.f * part_A * zpc - 2 * pr.cfs.j * pr.cfs.e * part_B * zpc - 2 * pr.cfs.j * pr.cfs.b * part_B**2 * zpc + 2 * pr.cfs.j * pr.cfs.d * part_A * ypc - 4 * pr.cfs.j * pr.cfs.d * part_A * part_B * zpc - 4 * pr.cfs.f * part_A * pr.cfs.h * ypc - 2 * pr.cfs.f * part_A * pr.cfs.b * ypc**2 - 2 * pr.cfs.b * part_B**2 * pr.cfs.g * xpc - pr.cfs.b * part_B**2 * pr.cfs.a * xpc**2 - 4 * pr.cfs.e * part_B * pr.cfs.g * xpc - 2 * pr.cfs.e * part_B * pr.cfs.a * xpc**2 - 2 * pr.cfs.a * part_A**2 * pr.cfs.h * ypc - pr.cfs.a * part_A**2 * pr.cfs.b * ypc**2 - 2 * pr.cfs.c * pr.cfs.d * xpc * ypc - pr.cfs.c * pr.cfs.b * part_B**2 * zpc**2 - pr.cfs.c * pr.cfs.a * part_A**2 * zpc**2 + 2 * pr.cfs.c * pr.cfs.a * xpc * part_A * zpc + 2 * pr.cfs.c * pr.cfs.h * part_B * zpc - 2 * pr.cfs.c * pr.cfs.d * part_A * zpc**2 * part_B + 2 * pr.cfs.c * pr.cfs.b * ypc * part_B * zpc + 2 * pr.cfs.c * pr.cfs.d * xpc * part_B * zpc + 2 * pr.cfs.c * pr.cfs.g * part_A * zpc + 2 * pr.cfs.c * pr.cfs.d * part_A * zpc * ypc - 2 * pr.cfs.d * part_A * part_B * pr.cfs.k);
 
-	z1 = 1/2 * (-2 * pr.cfs.d * xpc * part_B - 2 * pr.cfs.b * ypc * part_B - 2 * pr.cfs.j
-		+ 2 * pr.cfs.a * part_A**2 * zpc - 2 * pr.cfs.a * xpc * part_A - 2 * pr.cfs.h * part_B
-		+ 2 * pr.cfs.f * part_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * part_A + 2
-		* pr.cfs.e * part_B * zpc + 2 * pr.cfs.b * part_B**2 * zpc - 2 * pr.cfs.f * xpc
-		- 2 * pr.cfs.d * part_A * ypc + 4 * pr.cfs.d * part_A * part_B * zpc + 2
-		* sqrt_part) / (2 * pr.cfs.f * part_A + pr.cfs.b * part_B**2 + pr.cfs.c + 2
-		* pr.cfs.e * part_B + 2 * pr.cfs.d * part_A * part_B + pr.cfs.a * part_A**2);
+	z1 = 1/2 * (-2 * pr.cfs.d * xpc * part_B - 2 * pr.cfs.b * ypc * part_B - 2 * pr.cfs.j + 2 * pr.cfs.a * part_A**2 * zpc - 2 * pr.cfs.a * xpc * part_A - 2 * pr.cfs.h * part_B + 2 * pr.cfs.f * part_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * part_A + 2 * pr.cfs.e * part_B * zpc + 2 * pr.cfs.b * part_B**2 * zpc - 2 * pr.cfs.f * xpc - 2 * pr.cfs.d * part_A * ypc + 4 * pr.cfs.d * part_A * part_B * zpc + 2 * sqrt_part) / (2 * pr.cfs.f * part_A + pr.cfs.b * part_B**2 + pr.cfs.c + 2 * pr.cfs.e * part_B + 2 * pr.cfs.d * part_A * part_B + pr.cfs.a * part_A**2);
 
-	z2 = 1/2 * (-2 * pr.cfs.d * xpc * part_B - 2 * pr.cfs.b * ypc * part_B - 2 * pr.cfs.j
-		+ 2 * pr.cfs.a * part_A**2 * zpc - 2 * pr.cfs.a * xpc * part_A - 2 * pr.cfs.h * part_B
-		+ 2 * pr.cfs.f * part_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * part_A + 2
-		* pr.cfs.e * part_B * zpc + 2 * pr.cfs.b * part_B**2 * zpc - 2 * pr.cfs.f * xpc
-		- 2 * pr.cfs.d * part_A * ypc + 4 * pr.cfs.d * part_A * part_B * zpc - 2
-		* sqrt_part) / (2 * pr.cfs.f * part_A + pr.cfs.b * part_B**2 + pr.cfs.c + 2
-		* pr.cfs.e * part_B + 2 * pr.cfs.d * part_A * part_B + pr.cfs.a * part_A**2);
+	z2 = 1/2 * (-2 * pr.cfs.d * xpc * part_B - 2 * pr.cfs.b * ypc * part_B - 2 * pr.cfs.j + 2 * pr.cfs.a * part_A**2 * zpc - 2 * pr.cfs.a * xpc * part_A - 2 * pr.cfs.h * part_B + 2 * pr.cfs.f * part_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * part_A + 2 * pr.cfs.e * part_B * zpc + 2 * pr.cfs.b * part_B**2 * zpc - 2 * pr.cfs.f * xpc - 2 * pr.cfs.d * part_A * ypc + 4 * pr.cfs.d * part_A * part_B * zpc - 2 * sqrt_part) / (2 * pr.cfs.f * part_A + pr.cfs.b * part_B**2 + pr.cfs.c + 2 * pr.cfs.e * part_B + 2 * pr.cfs.d * part_A * part_B + pr.cfs.a * part_A**2);
 
+	#print(sqrt_part);
 	#print((z1, z2));
 	return (z1, z2);
 
@@ -289,7 +249,8 @@ def calculate_y_from_params(ypc, zpc, part_B, z_coord):
 	return (y1, y2);
 
 # create a 3x3 matriz of X,Y,Z orientation angles
-def calculate_matrix_r(omega, theta, kappa):
+def calculate_matrix_r(orientations):
+	omega, theta, kappa = orientations;
 
 	r11 = math.cos(theta) * math.cos(kappa)
 	r12 = math.sin(omega) * math.sin(theta) * math.cos(kappa) - math.cos(omega) * math.sin(kappa)
@@ -327,7 +288,7 @@ def calculate_image_intensity(raw_image, result_image):
 
 
 def calculate_pixel_intensity(raw_pixel):
-	return 1*pr.cfb.ambient + 1*(pr.cfb.difuse * raw_pixel.cos_theta + pr.cfb.specular * raw_pixel.cos_alpha**pr.cfb.n);
+	return 0*pr.cfb.ambient + 1*(pr.cfb.difuse * raw_pixel.cos_theta + pr.cfb.specular * raw_pixel.cos_alpha**pr.cfb.n);
 
 def print_matrix(matrix):
 	for i in range(matrix.shape[0]):
@@ -343,6 +304,9 @@ class point2D:
 	def __str__(self):
 		return '(' + str(self.x) + ', ' + str(self.y) + ')';
 
+	def as_array(self):
+		return np.array([self.x, self.y]);
+
 class point3D:
 	def __init__(self):
 		self.x = 0.0;
@@ -351,6 +315,9 @@ class point3D:
 
 	def __str__(self):
 		return '(' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.z) + ')';
+
+	def as_array(self):
+		return np.array([self.x, self.y, self.z]);
 
 class projection_point:
 	def __init__(self):
@@ -364,6 +331,12 @@ class projection_point:
 	def __str__(self):
 		return '(' + str(self.x1) + ', ' + str(self.y1) + ', ' + str(self.z1) + ')/'
 		+ '(' + str(self.x2) + ', ' + str(self.y2) + ', ' + str(self.z2) + ')2';
+
+	def as_array1(self):
+		return np.array([self.x1, self.y1, self.z1]);
+
+	def as_array2(self):
+		return np.array([self.x2, self.y2, self.z2]);
 
 if __name__ == '__main__':
 	generate_image('sphere.json');
