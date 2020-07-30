@@ -1,28 +1,28 @@
 {
     "position": [0.0, 0.0, -0.001],
     "orientation": [0.0, 0.0, 1.0],
-    "focal_distance": 50,
-    "screen_width": 200,
-    "screen_height": 200,
+    "focal_distance": 5,
+    "screen_width": 80,
+    "screen_height": 80,
     "pixel_size_x": 1,
     "pixel_size_y": 1,
     "cfs": {
-        "a": 0.0008,
-        "b": 0.0008,
-        "c": 0.0008,
+        "a": 1.0,
+        "b": 1.0,
+        "c": 1.0,
         "d": 0,
         "e": 0,
         "f": 0,
         "g": 0,
         "h": 0,
         "j": 0,
-        "k": -0.0008
+        "k": -1.0
     },
-    "light": [0.0, 0.0, -0.001],
+    "light": [0.1, 0.0, 0.01],
     "cfb": {
         "difuse": 1,
         "specular": 0,
-        "ambient": 0.5,
+        "ambient": 0.0,
         "n": 2
     }
 }
