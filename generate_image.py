@@ -84,17 +84,17 @@ def generate_image(paramFile):
 
 		#print(pixel_coord)
 
-		vet_normal = calculate_vet_normal(pixel_coord)
+		# vet_normal = calculate_vet_normal(pixel_coord)
 		#print(vet_normal)
 
-		vet_light_dir = calculate_light_dir(pixel_coord)
+		# vet_light_dir = calculate_light_dir(pixel_coord)
 		#print(vet_light_dir)
 
 		#vet_observ_dir = calculate_obser_dir(pixel_coord)
 
 		#vet_reflex_dir = calculate_reflex_dir(vet_normal, vet_light_dir)
 
-		cos_theta = calculate_cos(vet_normal, vet_light_dir)
+		#cos_theta = calculate_cos(vet_normal, vet_light_dir)
 		#cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
 
 		#print((cos_theta, cos_alpha));
