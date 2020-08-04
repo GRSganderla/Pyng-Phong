@@ -24,208 +24,119 @@ def generate_image(paramFile):
 
 	global image_matrix
 	print('Image matrix')
-	image_matrix = np.zeros([pr.screen_height, pr.screen_width])
+	image_matrix = np.zeros((pr.screen_height, pr.screen_width))
 	#print(image_matrix)
 
-	global image_space_coords
-	print('Image space coords')
-	image_space_coords = calculate_image_space_coord(image_matrix)
-	#print(image_space_coords)
-	#print_matrix(image_space_coords)
-
-	global projection_matrix
-	print('Projection matrix')
-	projection_matrix = calculate_projection_matrix(image_space_coords)
-	#print(projection_matrix)
-	#print_matrix(projection_matrix)
-
-	global raw_image
-	print('Raw image')
-	raw_image = calculate_pixel_color(projection_matrix, raw_image, pr.cfs)
-
-	print('Result image')
-	global result_image
-	result_image = calculate_image_intensity(raw_image, result_image)
-	#print_matrix(result_image)
-
-	#print(result_image)
-
-	coords = np.array([point.as_array() for point in image_space_coords.flatten()])
-
-	fig = plt.figure()
-	ax = fig.add_subplot(111, projection='3d')
-	points = np.array([point.z for point in raw_image.flatten()])
-	#print(points.shape)
-	ax.scatter(coords[:, 0], coords[:, 1], points[:])
-	ax.set_xlabel('X Label')
-	ax.set_ylabel('Y Label')
-	ax.set_zlabel('Z Label')
-	plt.show()
-
-	
-	plt.imshow(result_image, cmap='Greys') # anatomia
-	plt.show()
-
-
-def calculate_vet_normal(pixel_coord):
-
-	n1 = 2 * pr.cfs.a * pixel_coord.x + 2 * pr.cfs.d * pixel_coord.y + 2 * pr.cfs.f * pixel_coord.z + 2 * pr.cfs.g
-	n2 = 2 * pr.cfs.b * pixel_coord.y + 2 * pr.cfs.d * pixel_coord.x + 2 * pr.cfs.e * pixel_coord.z + 2 * pr.cfs.h
-	n3 = 2 * pr.cfs.c * pixel_coord.z + 2 * pr.cfs.e * pixel_coord.y + 2 * pr.cfs.f * pixel_coord.z + 2 * pr.cfs.j
-
-	return np.array([n1, n2, n3])
-
-def calculate_light_dir(pixel_coord):
-	return pr.light - pixel_coord.as_array()
-
-def calculate_obser_dir(pixel_coord):
-	return pr.position - pixel_coord.as_array()
-
-def calculate_vectors(pixel_coord):
-
-	vet_n = calculate_vet_normal(pixel_coord)
-
-	vet_lig = calculate_light_dir(pixel_coord)
-
-	vet_orien = calculate_obser_dir(pixel_coord)
-
-	vet_reflex = calculate_reflex_dir(vet_n, vet_lig)
-
-	return (vet_n, vet_lig, vet_orien, vet_reflex)
-
-def calculate_reflex_dir(N, L):
-	w = 2 * (N.dot(L))
-	R = w * N - L
-
-	return R
-
-def calculate_norm(vect):
-	return np.linalg.norm(vect)
-
-def calculate_cos(vect_1, vect_2):
-
-	dw_num = calculate_norm(vect_1) * calculate_norm(vect_2)
-
-	return 0 if dw_num == 0 else (vect_1.dot(vect_2) / dw_num)
-	
-
-def calculate_pixel_color(projection, image, coef):
-	image = np.full_like(projection_matrix, None, dtype=point3D)
-
-	print(projection_matrix.shape)
-
-	for idxs, _ in np.ndenumerate(image):
+	xpc, ypc, zpc = pr.position
+	for idxs, _ in np.ndenumerate(image_matrix):
 		# get indexes
-		i = idxs[0]
-		j = idxs[1]
+		i = idxs[0] # y axis
+		j = idxs[1] # x axis
 
-		image[i, j] = point3D()
+		# get image to space x and y transformation
+		space_coord = np.array([0.0, 0.0])
+		space_coord[0] = (1.0/pr.pixel_size_x)*(i - (pr.screen_width/2.0))
+		space_coord[1] = (1.0/pr.pixel_size_y)*(j - (pr.screen_height/2.0))
+		#print(space_coord)
 
-		dist1, dist2 = calculate_dist_pc(pr.position, projection[i, j])
+		# P1 and P2
+		projection_point = np.zeros((2, 3))
 
-
-		if dist2 < dist1:
-			image[i, j].x = projection[i, j].x2
-			image[i, j].y = projection[i, j].y2
-			image[i, j].z = projection[i, j].z2
-		else:
-			image[i, j].x = projection[i, j].x1
-			image[i, j].y = projection[i, j].y1
-			image[i, j].z = projection[i, j].z1
-
-		vet_normal, vet_light_dir, vet_observ_dir, vet_reflex_dir = calculate_vectors(image[i, j])
-
-		if(image[i, j].x == 0 and image[i, j].y == 0 and image[i, j].z == 0):
-			image[i, j].cos_theta = math.pi/2
-			image[i, j].cos_alpha = math.pi/2
-		else:
-			image[i, j].cos_theta = calculate_cos(vet_normal, vet_light_dir)
-			image[i, j].cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
-
-		#print(image[i, j].cos_theta)
-		#print(vet_normal)
-
-	return image
-
-
-
-def calculate_image_space_coord(image_matrix):
-	# generate an array same size as image matrix
-	global image_space_coords
-	image_space_coords = np.full_like(image_matrix, None, dtype=point2D)
-
-	# loop through all elements and calculate it's space value
-	for idxs, _ in np.ndenumerate(image_space_coords):
-		#print(idxs)
-		# get indexes
-		i = idxs[0]; j = idxs[1]
-		# calculate x and y
-		image_space_coords[i, j] = point2D()
-		image_space_coords[i, j].x = (1.0/pr.pixel_size_x)*(i - (pr.screen_width/2.0))
-		image_space_coords[i, j].y = (1.0/pr.pixel_size_y)*(j - (pr.screen_height/2.0))
-
-		#print(image_space_coords[i, j])
-
-	return image_space_coords
-
-def calculate_projection_matrix(image_space_coords):
-	# generate matrix same size as space coords
-	global projection_matrix
-	projection_matrix = np.full_like(image_space_coords, None, dtype=projection_point)
-
-	xpc = pr.position[0]; ypc = pr.position[1]; zpc = pr.position[2]
-
-	# loop through all elements and calculate it's values
-	for idxs, _ in np.ndenumerate(projection_matrix):
-		# get indexes
-		i = idxs[0]; j = idxs[1]
-
-		projection_matrix[i, j] = projection_point()
-
-		global omega, theta, kappa
 		r_xyz = calculate_matrix_r(omega, theta, kappa)
 
 		#print(r_xyz)
 
 		# calculate A and B values
-		part_A = calculate_A(r_xyz, image_space_coords[i, j], pr.focal_distance)
-		part_B = calculate_B(r_xyz, image_space_coords[i, j], pr.focal_distance)
-
-		#print((part_A, part_B))
-
-		#print(part_A)
+		value_A = calculate_A(r_xyz, space_coord, pr.focal_distance)
+		value_B = calculate_B(r_xyz, space_coord, pr.focal_distance)
+		#print((value_A, value_B))
 
 		# calculate z values
-		z_result = calculate_z_from_params(xpc, ypc, zpc, part_A, part_B)
-		projection_matrix[i, j].z1 = z_result[0]
-		projection_matrix[i, j].z2 = z_result[1]
+		z_result = calculate_z_from_params(xpc, ypc, zpc, value_A, value_B)
+		projection_point[0, 2] = z_result[0]
+		projection_point[1, 2] = z_result[1]
 
-		#print(z_result[1])
+		#print((z_result[0], z_result[1]))
 
 		# calculate x value
-		x_result = calculate_x_from_params(xpc, zpc, part_A, z_result)
-		projection_matrix[i, j].x1 = x_result[0]
-		projection_matrix[i, j].x2 = x_result[1]
+		x_result = calculate_x_from_params(xpc, zpc, value_A, z_result)
+		projection_point[0, 0] = x_result[0]
+		projection_point[1, 0] = x_result[1]
 
 		# calculate y value
-		y_result = calculate_y_from_params(ypc, zpc, part_B, z_result)
-		projection_matrix[i, j].y1 = y_result[0]
-		projection_matrix[i, j].y2 = y_result[1]
+		y_result = calculate_y_from_params(ypc, zpc, value_B, z_result)
+		projection_point[0, 1] = y_result[0]
+		projection_point[1, 1] = y_result[1]
+
+		#print((projection_point[0], projection_point[1]))
+
+		pixel_coord = np.zeros((3))
+
+		dist1, dist2 = calculate_dist_pc(projection_point)
+		#print((dist1, dist2))
+
+		# pixel_coord[0] = space_coord[0]
+		# pixel_coord[1] = space_coord[1]
+		if dist1 < dist2:
+			pixel_coord = projection_point[0]
+		else:
+			pixel_coord = projection_point[1]
+
+		#print(pixel_coord)
+
+		vet_normal = calculate_vet_normal(pixel_coord)
+		#print(vet_normal)
+
+		vet_light_dir = calculate_light_dir(pixel_coord)
+		#print(vet_light_dir)
+
+		#vet_observ_dir = calculate_obser_dir(pixel_coord)
+
+		#vet_reflex_dir = calculate_reflex_dir(vet_normal, vet_light_dir)
+
+		cos_theta = calculate_cos(vet_normal, vet_light_dir)
+		#cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
+
+		#print((cos_theta, cos_alpha));
+
+		# image_matrix[i, j] = calculate_pixel_intensity(cos_theta, cos_alpha=0)
+		image_matrix[i, j] = pixel_coord[2]
+
+
+	#coords = np.array([point.as_array() for point in raw_image.flatten()])
+
+	#fig = plt.figure()
+	#ax = fig.add_subplot(111, projection='3d')
+	#points = np.array([point.z for point in raw_image.flatten()])
+	# ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2])
+	# ax.set_xlabel('X Label')
+	# ax.set_ylabel('Y Label')
+	# ax.set_zlabel('Z Label')
+	# plt.show()
 	
-	return projection_matrix
+	plt.imshow(image_matrix, cmap='Greys') # anatomia
+	plt.show()
+
+	# coords = np.array([point.as_array() for point in image_space_coords.flatten()])
+
+	# fig = plt.figure()
+	# ax = fig.add_subplot(111, projection='3d')
+	# ax.scatter(coords[:, 0], coords[:, 1], image_matrix[:])
+	# ax.set_xlabel('X Label')
+	# ax.set_ylabel('Y Label')
+	# ax.set_zlabel('Z Label')
+	# plt.show()
 
 
-def calculate_dist_pc(pc_position, new_coord):
+def calculate_dist_pc(new_coord):
+	return (np.linalg.norm(pr.position - new_coord[0]), np.linalg.norm(pr.position - new_coord[1]))
 
-	return (np.linalg.norm(pc_position - new_coord.as_array1()), np.linalg.norm(pc_position - new_coord.as_array2()))
+def calculate_z_from_params(xpc, ypc, zpc, value_A, value_B):
+	part_1 = -2 * pr.cfs.d * xpc * value_B - 2 * pr.cfs.b * ypc * value_B - 2 * pr.cfs.j + 2 * pr.cfs.a * value_A**2 * zpc - 2 * pr.cfs.a * xpc * value_A - 2 * pr.cfs.h * value_B + 2 * pr.cfs.f * value_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * value_A + 2 * pr.cfs.e * value_B * zpc + 2 * pr.cfs.b * value_B**2 * zpc - 2 * pr.cfs.f * xpc - 2 * pr.cfs.d * value_A * ypc + 4 * pr.cfs.d * value_A * value_B * zpc
 
-def calculate_z_from_params(xpc, ypc, zpc, part_A, part_B):
+	sqrt_part = math.sqrt(-2 * pr.cfs.c * pr.cfs.g * xpc + pr.cfs.d**2 * xpc**2 * value_B**2 + 2 * pr.cfs.j * pr.cfs.h * value_B - 2 * pr.cfs.e * value_B * pr.cfs.k + pr.cfs.j**2 - pr.cfs.c * pr.cfs.k + pr.cfs.f**2 * value_A**2 * zpc**2 + pr.cfs.e**2 * value_B**2 * zpc**2 + pr.cfs.d**2 * value_A**2 * ypc**2 + 2 * pr.cfs.j * pr.cfs.e * ypc + 2 * pr.cfs.j * pr.cfs.g * value_A + 2 * pr.cfs.j * pr.cfs.f * xpc - 2 * pr.cfs.f * value_A * pr.cfs.k - pr.cfs.b * value_B**2 * pr.cfs.k - 2 * pr.cfs.c * pr.cfs.h * ypc - pr.cfs.c * pr.cfs.a * xpc**2 - pr.cfs.c * pr.cfs.b * ypc**2 - pr.cfs.a * value_A**2 * pr.cfs.k + 2 * pr.cfs.d * xpc * value_B**2 * pr.cfs.h - 2 * pr.cfs.d * xpc * value_B * pr.cfs.f * value_A * zpc - 2 * pr.cfs.d * xpc * value_B * pr.cfs.e * ypc - 2 * pr.cfs.d * xpc * value_B * pr.cfs.g * value_A + 2 * pr.cfs.d * xpc * value_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.d * xpc**2 * value_B * pr.cfs.f - 2 * pr.cfs.d**2 * xpc * value_B * value_A * ypc + 2 * pr.cfs.b * ypc * value_B * pr.cfs.a * xpc * value_A + 2 * pr.cfs.b * ypc * value_B * pr.cfs.f * value_A * zpc + 2 * pr.cfs.b * ypc * value_B * pr.cfs.g * value_A + 2 * pr.cfs.b * ypc * value_B * pr.cfs.f * xpc + pr.cfs.h**2 * value_B**2 + pr.cfs.e**2 * ypc**2 + pr.cfs.g**2 * value_A**2 + pr.cfs.f**2 * xpc**2 - 2 * pr.cfs.a * value_A**2 * zpc * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * value_A * pr.cfs.h * value_B + 2 * pr.cfs.a * xpc * value_A * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * value_A * pr.cfs.e * value_B * zpc + 2 * pr.cfs.h * value_B * pr.cfs.f * value_A * zpc - 2 * pr.cfs.h * value_B * pr.cfs.e * ypc + 2 * pr.cfs.h * value_B * pr.cfs.g * value_A + 2 * pr.cfs.h * value_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.h * value_B * pr.cfs.f * xpc - 2 * pr.cfs.h * value_B * pr.cfs.d * value_A * ypc - 2 * pr.cfs.f * value_A * zpc * pr.cfs.e * ypc + 2 * pr.cfs.f * value_A**2 * zpc * pr.cfs.g + 2 * pr.cfs.f * value_A * zpc**2 * pr.cfs.e * value_B - 2 * pr.cfs.f**2 * value_A * zpc * xpc + 2 * pr.cfs.f * value_A**2 * zpc * pr.cfs.d * ypc + 2 * pr.cfs.e * ypc * pr.cfs.g * value_A - 2 * pr.cfs.e**2 * ypc * value_B * zpc + 2 * pr.cfs.e * ypc * pr.cfs.f * xpc + 2 * pr.cfs.e * ypc**2 * pr.cfs.d * value_A - 2 * pr.cfs.e * ypc * pr.cfs.d * value_A * value_B * zpc + 2 * pr.cfs.g * value_A * pr.cfs.e * value_B * zpc - 2 * pr.cfs.g * value_A * pr.cfs.f * xpc + 2 * pr.cfs.g * value_A**2 * pr.cfs.d * ypc - 2 * pr.cfs.e * value_B * zpc * pr.cfs.f * xpc - 2 * pr.cfs.b * value_B**2 * zpc * pr.cfs.f * xpc - 2 * pr.cfs.f * xpc * pr.cfs.d * value_A * ypc + 2 * pr.cfs.d * xpc * value_B * pr.cfs.j + 2 * pr.cfs.b * ypc * value_B * pr.cfs.j - 2 * pr.cfs.j * pr.cfs.a * value_A**2 * zpc + 2 * pr.cfs.j * pr.cfs.a * xpc * value_A - 2 * pr.cfs.j * pr.cfs.f * value_A * zpc - 2 * pr.cfs.j * pr.cfs.e * value_B * zpc - 2 * pr.cfs.j * pr.cfs.b * value_B**2 * zpc + 2 * pr.cfs.j * pr.cfs.d * value_A * ypc - 4 * pr.cfs.j * pr.cfs.d * value_A * value_B * zpc - 4 * pr.cfs.f * value_A * pr.cfs.h * ypc - 2 * pr.cfs.f * value_A * pr.cfs.b * ypc**2 - 2 * pr.cfs.b * value_B**2 * pr.cfs.g * xpc - pr.cfs.b * value_B**2 * pr.cfs.a * xpc**2 - 4 * pr.cfs.e * value_B * pr.cfs.g * xpc - 2 * pr.cfs.e * value_B * pr.cfs.a * xpc**2 - 2 * pr.cfs.a * value_A**2 * pr.cfs.h * ypc - pr.cfs.a * value_A**2 * pr.cfs.b * ypc**2 - 2 * pr.cfs.c * pr.cfs.d * xpc * ypc - pr.cfs.c * pr.cfs.b * value_B**2 * zpc**2 - pr.cfs.c * pr.cfs.a * value_A**2 * zpc**2 + 2 * pr.cfs.c * pr.cfs.a * xpc * value_A * zpc + 2 * pr.cfs.c * pr.cfs.h * value_B * zpc - 2 * pr.cfs.c * pr.cfs.d * value_A * zpc**2 * value_B + 2 * pr.cfs.c * pr.cfs.b * ypc * value_B * zpc + 2 * pr.cfs.c * pr.cfs.d * xpc * value_B * zpc + 2 * pr.cfs.c * pr.cfs.g * value_A * zpc + 2 * pr.cfs.c * pr.cfs.d * value_A * zpc * ypc - 2 * pr.cfs.d * value_A * value_B * pr.cfs.k)
 
-	part_1 = -2 * pr.cfs.d * xpc * part_B - 2 * pr.cfs.b * ypc * part_B - 2 * pr.cfs.j + 2 * pr.cfs.a * part_A**2 * zpc - 2 * pr.cfs.a * xpc * part_A - 2 * pr.cfs.h * part_B + 2 * pr.cfs.f * part_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * part_A + 2 * pr.cfs.e * part_B * zpc + 2 * pr.cfs.b * part_B**2 * zpc - 2 * pr.cfs.f * xpc - 2 * pr.cfs.d * part_A * ypc + 4 * pr.cfs.d * part_A * part_B * zpc
-
-	sqrt_part = math.sqrt(-2 * pr.cfs.c * pr.cfs.g * xpc + pr.cfs.d**2 * xpc**2 * part_B**2 + 2 * pr.cfs.j * pr.cfs.h * part_B - 2 * pr.cfs.e * part_B * pr.cfs.k + pr.cfs.j**2 - pr.cfs.c * pr.cfs.k + pr.cfs.f**2 * part_A**2 * zpc**2 + pr.cfs.e**2 * part_B**2 * zpc**2 + pr.cfs.d**2 * part_A**2 * ypc**2 + 2 * pr.cfs.j * pr.cfs.e * ypc + 2 * pr.cfs.j * pr.cfs.g * part_A + 2 * pr.cfs.j * pr.cfs.f * xpc - 2 * pr.cfs.f * part_A * pr.cfs.k - pr.cfs.b * part_B**2 * pr.cfs.k - 2 * pr.cfs.c * pr.cfs.h * ypc - pr.cfs.c * pr.cfs.a * xpc**2 - pr.cfs.c * pr.cfs.b * ypc**2 - pr.cfs.a * part_A**2 * pr.cfs.k + 2 * pr.cfs.d * xpc * part_B**2 * pr.cfs.h - 2 * pr.cfs.d * xpc * part_B * pr.cfs.f * part_A * zpc - 2 * pr.cfs.d * xpc * part_B * pr.cfs.e * ypc - 2 * pr.cfs.d * xpc * part_B * pr.cfs.g * part_A + 2 * pr.cfs.d * xpc * part_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.d * xpc**2 * part_B * pr.cfs.f - 2 * pr.cfs.d**2 * xpc * part_B * part_A * ypc + 2 * pr.cfs.b * ypc * part_B * pr.cfs.a * xpc * part_A + 2 * pr.cfs.b * ypc * part_B * pr.cfs.f * part_A * zpc + 2 * pr.cfs.b * ypc * part_B * pr.cfs.g * part_A + 2 * pr.cfs.b * ypc * part_B * pr.cfs.f * xpc + pr.cfs.h**2 * part_B**2 + pr.cfs.e**2 * ypc**2 + pr.cfs.g**2 * part_A**2 + pr.cfs.f**2 * xpc**2 - 2 * pr.cfs.a * part_A**2 * zpc * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * part_A * pr.cfs.h * part_B + 2 * pr.cfs.a * xpc * part_A * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * part_A * pr.cfs.e * part_B * zpc + 2 * pr.cfs.h * part_B * pr.cfs.f * part_A * zpc - 2 * pr.cfs.h * part_B * pr.cfs.e * ypc + 2 * pr.cfs.h * part_B * pr.cfs.g * part_A + 2 * pr.cfs.h * part_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.h * part_B * pr.cfs.f * xpc - 2 * pr.cfs.h * part_B * pr.cfs.d * part_A * ypc - 2 * pr.cfs.f * part_A * zpc * pr.cfs.e * ypc + 2 * pr.cfs.f * part_A**2 * zpc * pr.cfs.g + 2 * pr.cfs.f * part_A * zpc**2 * pr.cfs.e * part_B - 2 * pr.cfs.f**2 * part_A * zpc * xpc + 2 * pr.cfs.f * part_A**2 * zpc * pr.cfs.d * ypc + 2 * pr.cfs.e * ypc * pr.cfs.g * part_A - 2 * pr.cfs.e**2 * ypc * part_B * zpc + 2 * pr.cfs.e * ypc * pr.cfs.f * xpc + 2 * pr.cfs.e * ypc**2 * pr.cfs.d * part_A - 2 * pr.cfs.e * ypc * pr.cfs.d * part_A * part_B * zpc + 2 * pr.cfs.g * part_A * pr.cfs.e * part_B * zpc - 2 * pr.cfs.g * part_A * pr.cfs.f * xpc + 2 * pr.cfs.g * part_A**2 * pr.cfs.d * ypc - 2 * pr.cfs.e * part_B * zpc * pr.cfs.f * xpc - 2 * pr.cfs.b * part_B**2 * zpc * pr.cfs.f * xpc - 2 * pr.cfs.f * xpc * pr.cfs.d * part_A * ypc + 2 * pr.cfs.d * xpc * part_B * pr.cfs.j + 2 * pr.cfs.b * ypc * part_B * pr.cfs.j - 2 * pr.cfs.j * pr.cfs.a * part_A**2 * zpc + 2 * pr.cfs.j * pr.cfs.a * xpc * part_A - 2 * pr.cfs.j * pr.cfs.f * part_A * zpc - 2 * pr.cfs.j * pr.cfs.e * part_B * zpc - 2 * pr.cfs.j * pr.cfs.b * part_B**2 * zpc + 2 * pr.cfs.j * pr.cfs.d * part_A * ypc - 4 * pr.cfs.j * pr.cfs.d * part_A * part_B * zpc - 4 * pr.cfs.f * part_A * pr.cfs.h * ypc - 2 * pr.cfs.f * part_A * pr.cfs.b * ypc**2 - 2 * pr.cfs.b * part_B**2 * pr.cfs.g * xpc - pr.cfs.b * part_B**2 * pr.cfs.a * xpc**2 - 4 * pr.cfs.e * part_B * pr.cfs.g * xpc - 2 * pr.cfs.e * part_B * pr.cfs.a * xpc**2 - 2 * pr.cfs.a * part_A**2 * pr.cfs.h * ypc - pr.cfs.a * part_A**2 * pr.cfs.b * ypc**2 - 2 * pr.cfs.c * pr.cfs.d * xpc * ypc - pr.cfs.c * pr.cfs.b * part_B**2 * zpc**2 - pr.cfs.c * pr.cfs.a * part_A**2 * zpc**2 + 2 * pr.cfs.c * pr.cfs.a * xpc * part_A * zpc + 2 * pr.cfs.c * pr.cfs.h * part_B * zpc - 2 * pr.cfs.c * pr.cfs.d * part_A * zpc**2 * part_B + 2 * pr.cfs.c * pr.cfs.b * ypc * part_B * zpc + 2 * pr.cfs.c * pr.cfs.d * xpc * part_B * zpc + 2 * pr.cfs.c * pr.cfs.g * part_A * zpc + 2 * pr.cfs.c * pr.cfs.d * part_A * zpc * ypc - 2 * pr.cfs.d * part_A * part_B * pr.cfs.k)
-
-	div_part = (2 * pr.cfs.f * part_A + pr.cfs.b * part_B**2 + pr.cfs.c + 2 * pr.cfs.e * part_B + 2 * pr.cfs.d * part_A * part_B + pr.cfs.a * part_A**2)
+	div_part = (2 * pr.cfs.f * value_A + pr.cfs.b * value_B**2 + pr.cfs.c + 2 * pr.cfs.e * value_B + 2 * pr.cfs.d * value_A * value_B + pr.cfs.a * value_A**2)
 
 	z1 = 1/2 * (part_1 + 2 * sqrt_part) / div_part
 
@@ -235,16 +146,16 @@ def calculate_z_from_params(xpc, ypc, zpc, part_A, part_B):
 	#print((z1, z2))
 	return (z1, z2)
 
-def calculate_x_from_params(xpc, zpc, part_A, z_coord):
-	x1 = xpc + (z_coord[0] - zpc) * part_A
-	x2 = xpc + (z_coord[1] - zpc) * part_A
+def calculate_x_from_params(xpc, zpc, value_A, z_coord):
+	x1 = xpc + (z_coord[0] - zpc) * value_A
+	x2 = xpc + (z_coord[1] - zpc) * value_A
 
 	#print((x1, x2))
 	return (x1, x2)
 
-def calculate_y_from_params(ypc, zpc, part_B, z_coord):
-	y1 = ypc + (z_coord[0] - zpc) * part_B
-	y2 = ypc + (z_coord[1] - zpc) * part_B
+def calculate_y_from_params(ypc, zpc, value_B, z_coord):
+	y1 = ypc + (z_coord[0] - zpc) * value_B
+	y2 = ypc + (z_coord[1] - zpc) * value_B
 
 	#print((y1, y2))
 	return (y1, y2)
@@ -265,14 +176,14 @@ def calculate_matrix_r(omega, theta, kappa):
 
 	return np.array([[r11, r12, r13], [r21, r22, r23], [r31, r32, r33]])
 
-def get_angles_from_orientations(orientations):
+def get_angles_from_orientations(orientation):
 	omega = np.array([1.0, 0.0, 0.0])
 	theta = np.array([0.0, 1.0, 0.0])
 	kappa = np.array([0.0, 0.0, 1.0])
 
-	omega = get_angle(omega, orientations)
-	theta = get_angle(theta, orientations)
-	kappa = get_angle(kappa, orientations)
+	omega = get_angle(omega, orientation)
+	theta = get_angle(theta, orientation)
+	kappa = get_angle(kappa, orientation)
 
 	return (omega, theta, kappa)
 
@@ -280,36 +191,50 @@ def get_angle(vect_1, vect_2):
 	return np.arccos(np.clip(np.dot(vect_1, vect_2), -1.0, 1.0))
 
 def calculate_A(R, coord, f):
-	side_up = R[0, 0] * coord.x + R[1, 0] * coord.y + R[2, 0] * f
-	side_dw = R[0, 2] * coord.x + R[1, 2] * coord.y + R[2, 2] * f
+	side_up = R[0, 0] * coord[0] + R[1, 0] * coord[1] + R[2, 0] * f
+	side_dw = R[0, 2] * coord[0] + R[1, 2] * coord[1] + R[2, 2] * f
 
-	return (side_up / side_dw) if side_dw != 0 else 0
+	return (side_up / side_dw) if side_dw != 0 else 10
 
 def calculate_B(R, coord, f):
-	side_up = R[0, 1] * coord.x + R[1, 1] * coord.y + R[2, 1] * f
-	side_dw = R[0, 2] * coord.x + R[1, 2] * coord.y + R[2, 2] * f
+	side_up = R[0, 1] * coord[0] + R[1, 1] * coord[1] + R[2, 1] * f
+	side_dw = R[0, 2] * coord[0] + R[1, 2] * coord[1] + R[2, 2] * f
 
-	return (side_up / side_dw) if side_dw != 0 else 0
+	return (side_up / side_dw) if side_dw != 0 else 10
 
-def calculate_image_intensity(raw_image, result_image):
-	result_image = np.zeros_like(raw_image, dtype=float)
-
-	for idxs, _ in np.ndenumerate(raw_image):
-		i = idxs[0]; j = idxs[1]
-
-		result_image[i, j] = calculate_pixel_intensity(raw_image[i, j])
-	
-	return result_image
-
-
-def calculate_pixel_intensity(raw_pixel):
-	return 1*pr.cfb.ambient + 1*(pr.cfb.difuse * raw_pixel.cos_theta + pr.cfb.specular * raw_pixel.cos_alpha**pr.cfb.n)
+def calculate_pixel_intensity(cos_theta, cos_alpha):
+	return 1*pr.cfb.ambient + 1*(pr.cfb.difuse * cos_theta + pr.cfb.specular * cos_alpha**pr.cfb.n)
 
 def print_matrix(matrix):
 	for i in range(matrix.shape[0]):
 		for j in range(matrix.shape[1]):
 			print(matrix[i, j], end='')
 	print('\n')
+
+
+def calculate_vet_normal(pixel_coord):
+	n1 = 2 * pr.cfs.a * pixel_coord[0] + 2 * pr.cfs.d * pixel_coord[1] + 2 * pr.cfs.f * pixel_coord[2] + 2 * pr.cfs.g
+	n2 = 2 * pr.cfs.b * pixel_coord[1] + 2 * pr.cfs.d * pixel_coord[0] + 2 * pr.cfs.e * pixel_coord[2] + 2 * pr.cfs.h
+	n3 = 2 * pr.cfs.c * pixel_coord[2] + 2 * pr.cfs.e * pixel_coord[1] + 2 * pr.cfs.f * pixel_coord[2] + 2 * pr.cfs.j
+
+	return np.array([n1, n2, n3])
+
+def calculate_light_dir(pixel_coord):
+	return pr.light - pixel_coord
+
+def calculate_obser_dir(pixel_coord):
+	return pr.position - pixel_coord
+
+def calculate_reflex_dir(N, L):
+	w = 2 * (N.dot(L))
+	R = w * N - L
+
+	return R
+
+def calculate_cos(vect_1, vect_2):
+	dw_num = np.linalg.norm(vect_1) * np.linalg.norm(vect_2)
+
+	return (vect_1.dot(vect_2) / dw_num) if dw_num != 0 else 0
 
 class point2D:
 	def __init__(self):
