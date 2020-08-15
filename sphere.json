@@ -4,8 +4,8 @@
     "focal_distance": 60,
     "screen_width": 80,
     "screen_height": 80,
-    "pixel_density_x": 1,
-    "pixel_density_y": 1,
+    "pixel_density_x": 0.1,
+    "pixel_density_y": 0.1,
     "cfs": {
         "a": 0.05,
         "b": 0.05,
