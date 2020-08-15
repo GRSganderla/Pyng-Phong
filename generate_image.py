@@ -21,6 +21,7 @@ def generate_image(paramFile):
 
 	global omega, theta, kappa
 	omega, theta, kappa = get_angles_from_orientations(pr.orientation)
+	print((omega, theta, kappa))
 
 	global image_matrix
 	print('Image matrix')
@@ -35,15 +36,14 @@ def generate_image(paramFile):
 
 		# get image to space x and y transformation
 		space_coord = np.array([0.0, 0.0])
-		space_coord[0] = (1.0/pr.pixel_size_x)*(i - (pr.screen_width/2.0))
-		space_coord[1] = (1.0/pr.pixel_size_y)*(j - (pr.screen_height/2.0))
+		space_coord[0] = (1.0/pr.pixel_density_x)*(i - (pr.screen_width/2.0))
+		space_coord[1] = (1.0/pr.pixel_density_y)*(j - (pr.screen_height/2.0))
 		#print(space_coord)
 
 		# P1 and P2
 		projection_point = np.zeros((2, 3))
 
 		r_xyz = calculate_matrix_r(omega, theta, kappa)
-
 		#print(r_xyz)
 
 		# calculate A and B values
@@ -132,19 +132,27 @@ def calculate_dist_pc(new_coord):
 	return (np.linalg.norm(pr.position - new_coord[0]), np.linalg.norm(pr.position - new_coord[1]))
 
 def calculate_z_from_params(xpc, ypc, zpc, value_A, value_B):
-	part_1 = -2 * pr.cfs.d * xpc * value_B - 2 * pr.cfs.b * ypc * value_B - 2 * pr.cfs.j + 2 * pr.cfs.a * value_A**2 * zpc - 2 * pr.cfs.a * xpc * value_A - 2 * pr.cfs.h * value_B + 2 * pr.cfs.f * value_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * value_A + 2 * pr.cfs.e * value_B * zpc + 2 * pr.cfs.b * value_B**2 * zpc - 2 * pr.cfs.f * xpc - 2 * pr.cfs.d * value_A * ypc + 4 * pr.cfs.d * value_A * value_B * zpc
 
-	sqrt_part = math.sqrt(-2 * pr.cfs.c * pr.cfs.g * xpc + pr.cfs.d**2 * xpc**2 * value_B**2 + 2 * pr.cfs.j * pr.cfs.h * value_B - 2 * pr.cfs.e * value_B * pr.cfs.k + pr.cfs.j**2 - pr.cfs.c * pr.cfs.k + pr.cfs.f**2 * value_A**2 * zpc**2 + pr.cfs.e**2 * value_B**2 * zpc**2 + pr.cfs.d**2 * value_A**2 * ypc**2 + 2 * pr.cfs.j * pr.cfs.e * ypc + 2 * pr.cfs.j * pr.cfs.g * value_A + 2 * pr.cfs.j * pr.cfs.f * xpc - 2 * pr.cfs.f * value_A * pr.cfs.k - pr.cfs.b * value_B**2 * pr.cfs.k - 2 * pr.cfs.c * pr.cfs.h * ypc - pr.cfs.c * pr.cfs.a * xpc**2 - pr.cfs.c * pr.cfs.b * ypc**2 - pr.cfs.a * value_A**2 * pr.cfs.k + 2 * pr.cfs.d * xpc * value_B**2 * pr.cfs.h - 2 * pr.cfs.d * xpc * value_B * pr.cfs.f * value_A * zpc - 2 * pr.cfs.d * xpc * value_B * pr.cfs.e * ypc - 2 * pr.cfs.d * xpc * value_B * pr.cfs.g * value_A + 2 * pr.cfs.d * xpc * value_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.d * xpc**2 * value_B * pr.cfs.f - 2 * pr.cfs.d**2 * xpc * value_B * value_A * ypc + 2 * pr.cfs.b * ypc * value_B * pr.cfs.a * xpc * value_A + 2 * pr.cfs.b * ypc * value_B * pr.cfs.f * value_A * zpc + 2 * pr.cfs.b * ypc * value_B * pr.cfs.g * value_A + 2 * pr.cfs.b * ypc * value_B * pr.cfs.f * xpc + pr.cfs.h**2 * value_B**2 + pr.cfs.e**2 * ypc**2 + pr.cfs.g**2 * value_A**2 + pr.cfs.f**2 * xpc**2 - 2 * pr.cfs.a * value_A**2 * zpc * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * value_A * pr.cfs.h * value_B + 2 * pr.cfs.a * xpc * value_A * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * value_A * pr.cfs.e * value_B * zpc + 2 * pr.cfs.h * value_B * pr.cfs.f * value_A * zpc - 2 * pr.cfs.h * value_B * pr.cfs.e * ypc + 2 * pr.cfs.h * value_B * pr.cfs.g * value_A + 2 * pr.cfs.h * value_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.h * value_B * pr.cfs.f * xpc - 2 * pr.cfs.h * value_B * pr.cfs.d * value_A * ypc - 2 * pr.cfs.f * value_A * zpc * pr.cfs.e * ypc + 2 * pr.cfs.f * value_A**2 * zpc * pr.cfs.g + 2 * pr.cfs.f * value_A * zpc**2 * pr.cfs.e * value_B - 2 * pr.cfs.f**2 * value_A * zpc * xpc + 2 * pr.cfs.f * value_A**2 * zpc * pr.cfs.d * ypc + 2 * pr.cfs.e * ypc * pr.cfs.g * value_A - 2 * pr.cfs.e**2 * ypc * value_B * zpc + 2 * pr.cfs.e * ypc * pr.cfs.f * xpc + 2 * pr.cfs.e * ypc**2 * pr.cfs.d * value_A - 2 * pr.cfs.e * ypc * pr.cfs.d * value_A * value_B * zpc + 2 * pr.cfs.g * value_A * pr.cfs.e * value_B * zpc - 2 * pr.cfs.g * value_A * pr.cfs.f * xpc + 2 * pr.cfs.g * value_A**2 * pr.cfs.d * ypc - 2 * pr.cfs.e * value_B * zpc * pr.cfs.f * xpc - 2 * pr.cfs.b * value_B**2 * zpc * pr.cfs.f * xpc - 2 * pr.cfs.f * xpc * pr.cfs.d * value_A * ypc + 2 * pr.cfs.d * xpc * value_B * pr.cfs.j + 2 * pr.cfs.b * ypc * value_B * pr.cfs.j - 2 * pr.cfs.j * pr.cfs.a * value_A**2 * zpc + 2 * pr.cfs.j * pr.cfs.a * xpc * value_A - 2 * pr.cfs.j * pr.cfs.f * value_A * zpc - 2 * pr.cfs.j * pr.cfs.e * value_B * zpc - 2 * pr.cfs.j * pr.cfs.b * value_B**2 * zpc + 2 * pr.cfs.j * pr.cfs.d * value_A * ypc - 4 * pr.cfs.j * pr.cfs.d * value_A * value_B * zpc - 4 * pr.cfs.f * value_A * pr.cfs.h * ypc - 2 * pr.cfs.f * value_A * pr.cfs.b * ypc**2 - 2 * pr.cfs.b * value_B**2 * pr.cfs.g * xpc - pr.cfs.b * value_B**2 * pr.cfs.a * xpc**2 - 4 * pr.cfs.e * value_B * pr.cfs.g * xpc - 2 * pr.cfs.e * value_B * pr.cfs.a * xpc**2 - 2 * pr.cfs.a * value_A**2 * pr.cfs.h * ypc - pr.cfs.a * value_A**2 * pr.cfs.b * ypc**2 - 2 * pr.cfs.c * pr.cfs.d * xpc * ypc - pr.cfs.c * pr.cfs.b * value_B**2 * zpc**2 - pr.cfs.c * pr.cfs.a * value_A**2 * zpc**2 + 2 * pr.cfs.c * pr.cfs.a * xpc * value_A * zpc + 2 * pr.cfs.c * pr.cfs.h * value_B * zpc - 2 * pr.cfs.c * pr.cfs.d * value_A * zpc**2 * value_B + 2 * pr.cfs.c * pr.cfs.b * ypc * value_B * zpc + 2 * pr.cfs.c * pr.cfs.d * xpc * value_B * zpc + 2 * pr.cfs.c * pr.cfs.g * value_A * zpc + 2 * pr.cfs.c * pr.cfs.d * value_A * zpc * ypc - 2 * pr.cfs.d * value_A * value_B * pr.cfs.k)
+	try:
 
-	div_part = (2 * pr.cfs.f * value_A + pr.cfs.b * value_B**2 + pr.cfs.c + 2 * pr.cfs.e * value_B + 2 * pr.cfs.d * value_A * value_B + pr.cfs.a * value_A**2)
+		part_1 = -2 * pr.cfs.d * xpc * value_B - 2 * pr.cfs.b * ypc * value_B - 2 * pr.cfs.j + 2 * pr.cfs.a * value_A**2 * zpc - 2 * pr.cfs.a * xpc * value_A - 2 * pr.cfs.h * value_B + 2 * pr.cfs.f * value_A * zpc - 2 * pr.cfs.e * ypc - 2 * pr.cfs.g * value_A + 2 * pr.cfs.e * value_B * zpc + 2 * pr.cfs.b * value_B**2 * zpc - 2 * pr.cfs.f * xpc - 2 * pr.cfs.d * value_A * ypc + 4 * pr.cfs.d * value_A * value_B * zpc
 
-	z1 = 1/2 * (part_1 + 2 * sqrt_part) / div_part
+		sqrt_part = math.sqrt(-2 * pr.cfs.c * pr.cfs.g * xpc + pr.cfs.d**2 * xpc**2 * value_B**2 + 2 * pr.cfs.j * pr.cfs.h * value_B - 2 * pr.cfs.e * value_B * pr.cfs.k + pr.cfs.j**2 - pr.cfs.c * pr.cfs.k + pr.cfs.f**2 * value_A**2 * zpc**2 + pr.cfs.e**2 * value_B**2 * zpc**2 + pr.cfs.d**2 * value_A**2 * ypc**2 + 2 * pr.cfs.j * pr.cfs.e * ypc + 2 * pr.cfs.j * pr.cfs.g * value_A + 2 * pr.cfs.j * pr.cfs.f * xpc - 2 * pr.cfs.f * value_A * pr.cfs.k - pr.cfs.b * value_B**2 * pr.cfs.k - 2 * pr.cfs.c * pr.cfs.h * ypc - pr.cfs.c * pr.cfs.a * xpc**2 - pr.cfs.c * pr.cfs.b * ypc**2 - pr.cfs.a * value_A**2 * pr.cfs.k + 2 * pr.cfs.d * xpc * value_B**2 * pr.cfs.h - 2 * pr.cfs.d * xpc * value_B * pr.cfs.f * value_A * zpc - 2 * pr.cfs.d * xpc * value_B * pr.cfs.e * ypc - 2 * pr.cfs.d * xpc * value_B * pr.cfs.g * value_A + 2 * pr.cfs.d * xpc * value_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.d * xpc**2 * value_B * pr.cfs.f - 2 * pr.cfs.d**2 * xpc * value_B * value_A * ypc + 2 * pr.cfs.b * ypc * value_B * pr.cfs.a * xpc * value_A + 2 * pr.cfs.b * ypc * value_B * pr.cfs.f * value_A * zpc + 2 * pr.cfs.b * ypc * value_B * pr.cfs.g * value_A + 2 * pr.cfs.b * ypc * value_B * pr.cfs.f * xpc + pr.cfs.h**2 * value_B**2 + pr.cfs.e**2 * ypc**2 + pr.cfs.g**2 * value_A**2 + pr.cfs.f**2 * xpc**2 - 2 * pr.cfs.a * value_A**2 * zpc * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * value_A * pr.cfs.h * value_B + 2 * pr.cfs.a * xpc * value_A * pr.cfs.e * ypc + 2 * pr.cfs.a * xpc * value_A * pr.cfs.e * value_B * zpc + 2 * pr.cfs.h * value_B * pr.cfs.f * value_A * zpc - 2 * pr.cfs.h * value_B * pr.cfs.e * ypc + 2 * pr.cfs.h * value_B * pr.cfs.g * value_A + 2 * pr.cfs.h * value_B**2 * pr.cfs.e * zpc + 2 * pr.cfs.h * value_B * pr.cfs.f * xpc - 2 * pr.cfs.h * value_B * pr.cfs.d * value_A * ypc - 2 * pr.cfs.f * value_A * zpc * pr.cfs.e * ypc + 2 * pr.cfs.f * value_A**2 * zpc * pr.cfs.g + 2 * pr.cfs.f * value_A * zpc**2 * pr.cfs.e * value_B - 2 * pr.cfs.f**2 * value_A * zpc * xpc + 2 * pr.cfs.f * value_A**2 * zpc * pr.cfs.d * ypc + 2 * pr.cfs.e * ypc * pr.cfs.g * value_A - 2 * pr.cfs.e**2 * ypc * value_B * zpc + 2 * pr.cfs.e * ypc * pr.cfs.f * xpc + 2 * pr.cfs.e * ypc**2 * pr.cfs.d * value_A - 2 * pr.cfs.e * ypc * pr.cfs.d * value_A * value_B * zpc + 2 * pr.cfs.g * value_A * pr.cfs.e * value_B * zpc - 2 * pr.cfs.g * value_A * pr.cfs.f * xpc + 2 * pr.cfs.g * value_A**2 * pr.cfs.d * ypc - 2 * pr.cfs.e * value_B * zpc * pr.cfs.f * xpc - 2 * pr.cfs.b * value_B**2 * zpc * pr.cfs.f * xpc - 2 * pr.cfs.f * xpc * pr.cfs.d * value_A * ypc + 2 * pr.cfs.d * xpc * value_B * pr.cfs.j + 2 * pr.cfs.b * ypc * value_B * pr.cfs.j - 2 * pr.cfs.j * pr.cfs.a * value_A**2 * zpc + 2 * pr.cfs.j * pr.cfs.a * xpc * value_A - 2 * pr.cfs.j * pr.cfs.f * value_A * zpc - 2 * pr.cfs.j * pr.cfs.e * value_B * zpc - 2 * pr.cfs.j * pr.cfs.b * value_B**2 * zpc + 2 * pr.cfs.j * pr.cfs.d * value_A * ypc - 4 * pr.cfs.j * pr.cfs.d * value_A * value_B * zpc - 4 * pr.cfs.f * value_A * pr.cfs.h * ypc - 2 * pr.cfs.f * value_A * pr.cfs.b * ypc**2 - 2 * pr.cfs.b * value_B**2 * pr.cfs.g * xpc - pr.cfs.b * value_B**2 * pr.cfs.a * xpc**2 - 4 * pr.cfs.e * value_B * pr.cfs.g * xpc - 2 * pr.cfs.e * value_B * pr.cfs.a * xpc**2 - 2 * pr.cfs.a * value_A**2 * pr.cfs.h * ypc - pr.cfs.a * value_A**2 * pr.cfs.b * ypc**2 - 2 * pr.cfs.c * pr.cfs.d * xpc * ypc - pr.cfs.c * pr.cfs.b * value_B**2 * zpc**2 - pr.cfs.c * pr.cfs.a * value_A**2 * zpc**2 + 2 * pr.cfs.c * pr.cfs.a * xpc * value_A * zpc + 2 * pr.cfs.c * pr.cfs.h * value_B * zpc - 2 * pr.cfs.c * pr.cfs.d * value_A * zpc**2 * value_B + 2 * pr.cfs.c * pr.cfs.b * ypc * value_B * zpc + 2 * pr.cfs.c * pr.cfs.d * xpc * value_B * zpc + 2 * pr.cfs.c * pr.cfs.g * value_A * zpc + 2 * pr.cfs.c * pr.cfs.d * value_A * zpc * ypc - 2 * pr.cfs.d * value_A * value_B * pr.cfs.k)
 
-	z2 = 1/2 * (part_1 - 2 * sqrt_part) / div_part
+		div_part = (2 * pr.cfs.f * value_A + pr.cfs.b * value_B**2 + pr.cfs.c + 2 * pr.cfs.e * value_B + 2 * pr.cfs.d * value_A * value_B + pr.cfs.a * value_A**2)
 
-	#print(sqrt_part)
-	#print((z1, z2))
-	return (z1, z2)
+		z1 = 1/2 * (part_1 + 2 * sqrt_part) / div_part
+
+		z2 = 1/2 * (part_1 - 2 * sqrt_part) / div_part
+
+		#print(sqrt_part)
+		#print((z1, z2))
+		return (z1, z2)
+	except:
+		pass
+
+	return (-1, -1)
+
 
 def calculate_x_from_params(xpc, zpc, value_A, z_coord):
 	x1 = xpc + (z_coord[0] - zpc) * value_A

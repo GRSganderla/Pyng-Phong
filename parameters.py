@@ -8,8 +8,8 @@ orientation = None;
 focal_distance = None;
 screen_width = None;
 screen_height = None;
-pixel_size_x = None;
-pixel_size_y = None;
+pixel_density_x = None;
+pixel_density_y = None;
 
 cfs = coefficients();
 cfs.a = None;
@@ -51,15 +51,15 @@ def load_file(file_path):
 # attribute values to global variables from given parameter dictionary
 def initialize_vars(parameters):
 	global position, orientation, focal_distance, screen_width;
-	global screen_height, pixel_size_x, pixel_size_y;
+	global screen_height, pixel_density_x, pixel_density_y;
 
 	position = parameters['position'];
 	orientation = parameters['orientation'];
 	focal_distance = parameters['focal_distance'];
 	screen_width = parameters['screen_width'];
 	screen_height = parameters['screen_height'];
-	pixel_size_x = parameters['pixel_size_x'];
-	pixel_size_y = parameters['pixel_size_y'];
+	pixel_density_x = parameters['pixel_density_x'];
+	pixel_density_y = parameters['pixel_density_y'];
 
 	global cfs;
 
