@@ -36,8 +36,8 @@ def generate_image(paramFile):
 
 		# get image to space x and y transformation
 		space_coord = np.array([0.0, 0.0])
-		space_coord[0] = (1.0/pr.pixel_density_x)*(i - (pr.screen_width/2.0))
-		space_coord[1] = (1.0/pr.pixel_density_y)*(j - (pr.screen_height/2.0))
+		space_coord[0] = (1.0/pr.pixel_size_x)*(i - (pr.screen_width/2.0))
+		space_coord[1] = (1.0/pr.pixel_size_y)*(j - (pr.screen_height/2.0))
 		#print(space_coord)
 
 		# P1 and P2
@@ -84,23 +84,23 @@ def generate_image(paramFile):
 
 		#print(pixel_coord)
 
-		# vet_normal = calculate_vet_normal(pixel_coord)
-		#print(vet_normal)
+		vet_normal = calculate_vet_normal(pixel_coord)
+		# print(vet_normal)
 
-		# vet_light_dir = calculate_light_dir(pixel_coord)
-		#print(vet_light_dir)
+		vet_light_dir = calculate_light_dir(pixel_coord)
+		# print(vet_light_dir)
 
-		#vet_observ_dir = calculate_obser_dir(pixel_coord)
+		vet_observ_dir = calculate_obser_dir(pixel_coord)
 
-		#vet_reflex_dir = calculate_reflex_dir(vet_normal, vet_light_dir)
+		vet_reflex_dir = calculate_reflex_dir(vet_normal, vet_light_dir)
 
-		#cos_theta = calculate_cos(vet_normal, vet_light_dir)
-		#cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
+		cos_theta = calculate_cos(vet_normal, vet_light_dir)
+		cos_alpha = calculate_cos(vet_reflex_dir, vet_observ_dir)
 
 		#print((cos_theta, cos_alpha));
 
-		# image_matrix[i, j] = calculate_pixel_intensity(cos_theta, cos_alpha=0)
-		image_matrix[i, j] = pixel_coord[2]
+		image_matrix[i, j] = calculate_pixel_intensity(cos_theta, cos_alpha=0)
+		# image_matrix[i, j] = pixel_coord[2]
 
 
 	#coords = np.array([point.as_array() for point in raw_image.flatten()])
